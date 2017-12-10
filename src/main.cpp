@@ -22,11 +22,14 @@ void setup() {
   lightLevel = 0;
 
   spiffs_available = SPIFFS.begin();
-  Serial.println("SPIFFS opened: " + spiffs_available);
+  Serial.print("SPIFFS opened: ");
+  Serial.println(spiffs_available);
 
   if (spiffs_available) {
     File f = SPIFFS.open("/lightLevel", "r");
     lightLevel = f.parseInt();
+    Serial.print("read lightlevel from SPIFFS: ");
+    Serial.println(lightLevel);
     f.close();
   } else {
     if (SPIFFS.format()) {
@@ -41,19 +44,21 @@ void setup() {
   setup_OTA();
   setup_MQTT();
 
-  setLightLevel(0);
+  setLightLevel(lightLevel);
 }
 
 void setLightLevel(uint8_t level) {
   lightLevel =  constrain(level, 0, 100);
-  analogWrite(WARDROBE_LED_PIN, map(lightLevel, 0, 100, 0, PWMRANGE));
   // Save lightlevel to SPIFFS (EEPROM), to remember value between powercycles.
   if (spiffs_available) {
     File f = SPIFFS.open("/lightLevel", "w");
     f.println(lightLevel);
     f.close();
+    Serial.print("saved lightlevel to SPIFFS: ");
+    Serial.println(lightLevel);
   }
 
+  analogWrite(WARDROBE_LED_PIN, map(lightLevel, 0, 100, 0, PWMRANGE));
   getLightLevel();
 
   Serial.print("set lightlevel to: ");
@@ -74,8 +79,8 @@ void setup_WiFi() {
   char MAC_char[18];
 
   WiFi.macAddress(MAC_array);
-  for (int i = 0; i < sizeof(MAC_array); ++i){
-    sprintf(MAC_char,"%s%02x:",MAC_char,MAC_array[i]);
+  for (int i = 0; i < sizeof MAC_array; ++i) {
+    snprintf(MAC_char, sizeof MAC_char, "%s%02x:", MAC_char, MAC_array[i]);
   }
 
   Serial.println(MAC_char);
@@ -109,7 +114,8 @@ void setup_OTA() {
       type = "filesystem";
 
     // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-    Serial.println("Start updating " + type);
+    Serial.print("Start updating ");
+    Serial.println(type);
     publish_message("START UPDATING FIRMWARE");
   });
 

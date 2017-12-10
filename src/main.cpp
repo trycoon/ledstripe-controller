@@ -6,6 +6,7 @@
 #include <AsyncMqttClient.h>
 #include <string>
 #include <main.h>
+#include "FS.h"
 
 /*
  * Simple NodeMCU sketch that controlls the LED-stripe in the entrance wardrobe
@@ -20,6 +21,22 @@ void setup() {
   pinMode(WARDROBE_LED_PIN, OUTPUT);
   lightLevel = 0;
 
+  spiffs_available = SPIFFS.begin();
+  Serial.println("SPIFFS opened: " + spiffs_available);
+
+  if (spiffs_available) {
+    File f = SPIFFS.open("/lightLevel", "r");
+    lightLevel = f.parseInt();
+    f.close();
+  } else {
+    if (SPIFFS.format()) {
+      File fw = SPIFFS.open("/lightLevel", "w");
+      fw.println(lightLevel);
+      fw.close();
+      Serial.println("SPIFFS formated.");
+    }
+  }
+
   setup_WiFi();
   setup_OTA();
   setup_MQTT();
@@ -30,6 +47,12 @@ void setup() {
 void setLightLevel(uint8_t level) {
   lightLevel =  constrain(level, 0, 100);
   analogWrite(WARDROBE_LED_PIN, map(lightLevel, 0, 100, 0, PWMRANGE));
+  // Save lightlevel to SPIFFS (EEPROM), to remember value between powercycles.
+  if (spiffs_available) {
+    File f = SPIFFS.open("/lightLevel", "w");
+    f.println(lightLevel);
+    f.close();
+  }
 
   getLightLevel();
 
@@ -93,6 +116,8 @@ void setup_OTA() {
   ArduinoOTA.onEnd([]() {
     Serial.println("\nEnd");
     publish_message("DONE UPDATING FIRMWARE");
+    delay(1000);
+    ESP.restart();
   });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {

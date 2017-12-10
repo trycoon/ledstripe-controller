@@ -18,6 +18,7 @@ const char* MQTT_TOPIC = "home/entrance-wardrobe";
 const uint16_t MQTT_PORT = 1883;
 
 uint8_t lightLevel;
+boolean spiffs_available;
 
 void onMqttConnect(bool sessionPresent);
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason);

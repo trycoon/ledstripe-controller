@@ -50,3 +50,10 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+.pioenvs
+.piolibdeps
+.vscode/c_cpp_properties.json
+.clang_complete
+.gcc-flags.json
+
+.vscode
